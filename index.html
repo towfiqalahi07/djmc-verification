@@ -10,18 +10,16 @@
     <main class="container">
       <section class="card">
         <h1>DJMC 35 Batch Verification</h1>
-        <p class="subtitle">
-          Submit your details for official verification. After submission, you will get a unique tracking ID.
-        </p>
+        <p class="subtitle">Submit required proof to verify as an official DJMC 35 batch student.</p>
 
         <form id="verificationForm" class="form-grid">
           <label>
-            Full Name
+            Name
             <input type="text" name="fullName" required />
           </label>
 
           <label>
-            Facebook Profile Link (must be in DJMC35 messenger group)
+            Facebook ID Link (joined in DJMC35 messenger group)
             <input type="url" name="facebookLink" required placeholder="https://facebook.com/your-profile" />
           </label>
 
@@ -36,30 +34,32 @@
           </label>
 
           <fieldset class="camera-box">
-            <legend>Live Picture of Admission Payment Receipt (camera capture)</legend>
-            <p class="camera-note">Use your camera to take a live receipt picture (upload from files is removed for this field).</p>
+            <legend>Live picture of admission payment receipt</legend>
+            <p class="camera-note">File upload is disabled for this field. Capture from camera only.</p>
             <video id="receiptVideo" class="camera-preview hidden" autoplay playsinline></video>
             <canvas id="receiptCanvas" class="camera-preview hidden"></canvas>
+
             <div class="camera-actions">
               <button type="button" id="startCameraBtn">Start Camera</button>
               <button type="button" id="capturePhotoBtn" class="secondary" disabled>Take Picture</button>
               <button type="button" id="retakePhotoBtn" class="secondary hidden">Retake</button>
             </div>
+
             <p id="cameraStatus" class="camera-status">No picture captured yet.</p>
           </fieldset>
 
-          <button type="submit" id="submitBtn">Submit Verification Request</button>
+          <button id="submitBtn" type="submit">Submit Verification Request</button>
         </form>
 
         <div id="message" class="message" aria-live="polite"></div>
 
-        <p class="status-link">
-          Already submitted? <a href="status.html">Check your verification status</a>
-        </p>
+        <p class="status-link">Already submitted? <a href="status.html">Check verification status</a></p>
       </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@16.0.2"></script>
     <script src="scripts/config.js"></script>
+    <script src="scripts/appwrite-client.js"></script>
     <script src="scripts/app.js"></script>
   </body>
 </html>

@@ -9,8 +9,8 @@
   <body>
     <main class="container">
       <section class="card">
-        <h1>Check Verification Status</h1>
-        <p class="subtitle">Enter your tracking ID to see if your application is pending, verified, or rejected.</p>
+        <h1>Verification Status</h1>
+        <p class="subtitle">Enter your tracking ID to view current review status.</p>
 
         <form id="statusForm" class="form-grid compact">
           <label>
@@ -22,13 +22,13 @@
 
         <div id="statusResult" class="status-result hidden" aria-live="polite"></div>
 
-        <p class="status-link">
-          New applicant? <a href="index.html">Go to verification form</a>
-        </p>
+        <p class="status-link">Need to submit first? <a href="index.html">Go to form</a></p>
       </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@16.0.2"></script>
     <script src="scripts/config.js"></script>
+    <script src="scripts/appwrite-client.js"></script>
     <script src="scripts/status.js"></script>
   </body>
 </html>

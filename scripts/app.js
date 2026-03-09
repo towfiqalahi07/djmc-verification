@@ -1,59 +1,81 @@
-const form = document.getElementById("verificationForm");
-const message = document.getElementById("message");
-const submitBtn = document.getElementById("submitBtn");
-const startCameraBtn = document.getElementById("startCameraBtn");
-const capturePhotoBtn = document.getElementById("capturePhotoBtn");
-const retakePhotoBtn = document.getElementById("retakePhotoBtn");
-const cameraStatus = document.getElementById("cameraStatus");
-const receiptVideo = document.getElementById("receiptVideo");
-const receiptCanvas = document.getElementById("receiptCanvas");
+const form = document.getElementById('verificationForm');
+const message = document.getElementById('message');
+const submitBtn = document.getElementById('submitBtn');
+const startCameraBtn = document.getElementById('startCameraBtn');
+const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+const retakePhotoBtn = document.getElementById('retakePhotoBtn');
+const cameraStatus = document.getElementById('cameraStatus');
+const receiptVideo = document.getElementById('receiptVideo');
+const receiptCanvas = document.getElementById('receiptCanvas');
 
-let receiptStream;
-let capturedReceiptBlob;
-
-const ensureApiBaseUrl = () => {
-  const baseUrl = window.APP_CONFIG?.API_BASE_URL?.trim();
-  if (!baseUrl) {
-    throw new Error("Portal is not configured yet. Please set API_BASE_URL in scripts/config.js");
-  }
-  return baseUrl;
-};
-
-const stopCamera = () => {
-  if (receiptStream) {
-    receiptStream.getTracks().forEach((track) => track.stop());
-    receiptStream = undefined;
-  }
-};
-
-const showMessage = (type, text) => {
-  message.className = `message ${type}`;
-  message.textContent = text;
-};
+let liveStream;
+let receiptBlob;
 
 const setCameraStatus = (text) => {
   cameraStatus.textContent = text;
 };
 
-startCameraBtn.addEventListener("click", async () => {
+const stopCamera = () => {
+  if (!liveStream) {
+    return;
+  }
+
+  liveStream.getTracks().forEach((track) => track.stop());
+  liveStream = undefined;
+};
+
+const showError = (text) => {
+  message.className = 'message error';
+  message.textContent = text;
+};
+
+const showSuccessWithCopy = (trackingId) => {
+  message.className = 'message success';
+  message.innerHTML = `
+    <div>Submission completed. Your tracking ID:</div>
+    <div class="tracking-row">
+      <code>${trackingId}</code>
+      <button id="copyTrackingBtn" type="button" class="copy-btn" aria-label="Copy tracking ID" title="Copy tracking ID">📋</button>
+    </div>
+  `;
+
+  const copyBtn = document.getElementById('copyTrackingBtn');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(trackingId);
+      copyBtn.textContent = '✅';
+      setTimeout(() => {
+        copyBtn.textContent = '📋';
+      }, 1200);
+    } catch (_error) {
+      copyBtn.textContent = '❌';
+    }
+  });
+};
+
+startCameraBtn.addEventListener('click', async () => {
   try {
     stopCamera();
-    receiptStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-    receiptVideo.srcObject = receiptStream;
-    receiptVideo.classList.remove("hidden");
-    receiptCanvas.classList.add("hidden");
+    liveStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+      audio: false,
+    });
+
+    receiptVideo.srcObject = liveStream;
+    receiptVideo.classList.remove('hidden');
+    receiptCanvas.classList.add('hidden');
     capturePhotoBtn.disabled = false;
-    retakePhotoBtn.classList.add("hidden");
-    capturedReceiptBlob = undefined;
-    setCameraStatus("Camera is ready. Tap 'Take Picture'.");
-  } catch (error) {
-    setCameraStatus("Could not access camera. Please allow camera permission and retry.");
+    retakePhotoBtn.classList.add('hidden');
+    receiptBlob = undefined;
+    setCameraStatus('Camera ready. Tap "Take Picture".');
+  } catch (_error) {
+    setCameraStatus('Camera access denied or unavailable. Please allow permission and retry.');
   }
 });
 
-capturePhotoBtn.addEventListener("click", () => {
-  if (!receiptStream) {
-    setCameraStatus("Start camera first.");
+capturePhotoBtn.addEventListener('click', () => {
+  if (!liveStream) {
+    setCameraStatus('Please start camera first.');
     return;
   }
 
@@ -61,74 +83,100 @@ capturePhotoBtn.addEventListener("click", () => {
   const height = receiptVideo.videoHeight || 720;
   receiptCanvas.width = width;
   receiptCanvas.height = height;
-  receiptCanvas.getContext("2d").drawImage(receiptVideo, 0, 0, width, height);
+  receiptCanvas.getContext('2d').drawImage(receiptVideo, 0, 0, width, height);
 
-  receiptCanvas.toBlob(
-    (blob) => {
-      if (!blob) {
-        setCameraStatus("Could not capture photo. Please retry.");
-        return;
-      }
-      capturedReceiptBlob = blob;
-      receiptVideo.classList.add("hidden");
-      receiptCanvas.classList.remove("hidden");
-      retakePhotoBtn.classList.remove("hidden");
-      capturePhotoBtn.disabled = true;
-      stopCamera();
-      setCameraStatus("Picture captured successfully.");
-    },
-    "image/jpeg",
-    0.9
-  );
+  receiptCanvas.toBlob((blob) => {
+    if (!blob) {
+      setCameraStatus('Could not capture image. Try again.');
+      return;
+    }
+
+    receiptBlob = blob;
+    receiptVideo.classList.add('hidden');
+    receiptCanvas.classList.remove('hidden');
+    capturePhotoBtn.disabled = true;
+    retakePhotoBtn.classList.remove('hidden');
+    stopCamera();
+    setCameraStatus('Live receipt picture captured.');
+  }, 'image/jpeg', 0.9);
 });
 
-retakePhotoBtn.addEventListener("click", () => {
-  capturedReceiptBlob = undefined;
-  receiptCanvas.classList.add("hidden");
-  receiptVideo.classList.remove("hidden");
-  retakePhotoBtn.classList.add("hidden");
+retakePhotoBtn.addEventListener('click', () => {
+  receiptBlob = undefined;
+  receiptCanvas.classList.add('hidden');
+  receiptVideo.classList.remove('hidden');
+  retakePhotoBtn.classList.add('hidden');
   capturePhotoBtn.disabled = false;
-  setCameraStatus("Retake mode enabled. Start camera again if needed.");
+  setCameraStatus('Retake enabled. Start camera again if preview is blank.');
 });
 
-form.addEventListener("submit", async (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  message.className = "message";
-  message.textContent = "";
+  message.className = 'message';
+  message.textContent = '';
   submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
+  submitBtn.textContent = 'Submitting...';
 
   try {
-    const baseUrl = ensureApiBaseUrl();
+    if (!receiptBlob) {
+      throw new Error('Please capture a live payment receipt picture before submit.');
+    }
+
+    const services = createServices();
+    await ensureAnonymousSession(services.account);
+
     const data = new FormData(form);
+    const fullName = String(data.get('fullName') || '').trim();
+    const facebookLink = String(data.get('facebookLink') || '').trim();
+    const admissionCopy = data.get('admissionCopy');
+    const resultScreenshot = data.get('resultScreenshot');
 
-    if (!capturedReceiptBlob) {
-      throw new Error("Please take a live picture of your payment receipt before submitting.");
+    if (!fullName || !facebookLink || !(admissionCopy instanceof File) || !(resultScreenshot instanceof File)) {
+      throw new Error('Please fill in all required fields.');
     }
 
-    data.append("paymentReceipt", capturedReceiptBlob, `payment-receipt-${Date.now()}.jpg`);
+    const trackingId = makeTrackingId();
+    const paymentReceipt = new File([receiptBlob], `payment-receipt-${Date.now()}.jpg`, { type: 'image/jpeg' });
 
-    const response = await fetch(`${baseUrl}/submit`, { method: "POST", body: data });
-    const result = await response.json();
+    const [admissionUpload, resultUpload, receiptUpload] = await Promise.all([
+      uploadImageFile(services, admissionCopy, 'admission-copy'),
+      uploadImageFile(services, resultScreenshot, 'result-screenshot'),
+      uploadImageFile(services, paymentReceipt, 'payment-receipt'),
+    ]);
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || "Failed to submit application.");
-    }
+    await services.databases.createDocument(
+      services.cfg.APPWRITE_DATABASE_ID,
+      services.cfg.APPWRITE_COLLECTION_ID,
+      services.ID.unique(),
+      {
+        trackingId,
+        fullName,
+        facebookLink,
+        admissionCopyFileId: admissionUpload.$id,
+        resultScreenshotFileId: resultUpload.$id,
+        paymentReceiptFileId: receiptUpload.$id,
+        admissionCopyUrl: buildFileViewUrl(services.cfg, admissionUpload.$id),
+        resultScreenshotUrl: buildFileViewUrl(services.cfg, resultUpload.$id),
+        paymentReceiptUrl: buildFileViewUrl(services.cfg, receiptUpload.$id),
+        status: 'pending',
+      },
+      [services.Permission.read(services.Role.any())]
+    );
 
-    showMessage("success", `Submitted successfully. Your tracking ID is ${result.trackingId}. Save this ID for status check.`);
+    showSuccessWithCopy(trackingId);
     form.reset();
-    capturedReceiptBlob = undefined;
-    receiptCanvas.classList.add("hidden");
-    receiptVideo.classList.add("hidden");
-    retakePhotoBtn.classList.add("hidden");
+    receiptBlob = undefined;
+    receiptCanvas.classList.add('hidden');
+    receiptVideo.classList.add('hidden');
     capturePhotoBtn.disabled = true;
-    setCameraStatus("No picture captured yet.");
+    retakePhotoBtn.classList.add('hidden');
+    setCameraStatus('No picture captured yet.');
   } catch (error) {
-    showMessage("error", error.message || "Unexpected error occurred.");
+    showError(error.message || 'Submission failed.');
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Verification Request";
+    submitBtn.textContent = 'Submit Verification Request';
   }
 });
 
-window.addEventListener("beforeunload", stopCamera);
+window.addEventListener('beforeunload', stopCamera);

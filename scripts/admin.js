@@ -1,47 +1,106 @@
-const adminForm = document.getElementById('adminForm');
-const adminMessage = document.getElementById('adminMessage');
+const loginForm = document.getElementById('adminLoginForm');
+const reviewForm = document.getElementById('adminForm');
+const authState = document.getElementById('authState');
+const message = document.getElementById('adminMessage');
+const logoutBtn = document.getElementById('logoutBtn');
 
-const showAdminMessage = (type, text) => {
-  adminMessage.className = `message ${type}`;
-  adminMessage.textContent = text;
+let services;
+
+const showMessage = (type, text) => {
+  message.className = `message ${type}`;
+  message.textContent = text;
 };
 
-const ensureApiBaseUrl = () => {
-  const baseUrl = window.APP_CONFIG?.API_BASE_URL?.trim();
-  if (!baseUrl) {
-    throw new Error('Portal is not configured yet. Please set API_BASE_URL in scripts/config.js');
+const toggleAdminUi = (loggedIn, label = '') => {
+  loginForm.classList.toggle('hidden', loggedIn);
+  reviewForm.classList.toggle('hidden', !loggedIn);
+  logoutBtn.classList.toggle('hidden', !loggedIn);
+  authState.textContent = loggedIn ? `Signed in as ${label}` : 'Not signed in';
+};
+
+const validateAdminTeamIfConfigured = async () => {
+  const teamId = String(services.cfg.APPWRITE_ADMIN_TEAM_ID || '').trim();
+  if (!teamId) {
+    return;
   }
-  return baseUrl;
+
+  const memberships = await services.teams.listMemberships(teamId);
+  if (!memberships.total) {
+    throw new Error('Access denied. Your account is not in configured admin team.');
+  }
 };
 
-adminForm.addEventListener('submit', async (event) => {
+const boot = async () => {
+  services = createServices();
+
+  try {
+    const me = await services.account.get();
+    await validateAdminTeamIfConfigured();
+    toggleAdminUi(true, me.email || me.name || 'admin');
+  } catch (_error) {
+    toggleAdminUi(false);
+  }
+};
+
+loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   try {
-    const baseUrl = ensureApiBaseUrl();
-    const data = new FormData(adminForm);
-    const payload = {
-      trackingId: data.get('trackingId').toString().trim(),
-      status: data.get('status').toString(),
-    };
-    const adminSecret = data.get('adminSecret').toString();
+    const data = new FormData(loginForm);
+    const email = String(data.get('email') || '').trim();
+    const password = String(data.get('password') || '');
 
-    const response = await fetch(`${baseUrl}/admin/update-status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-secret': adminSecret,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Update failed.');
-    }
-
-    showAdminMessage('success', 'Verification status updated successfully.');
+    await services.account.createEmailPasswordSession(email, password);
+    await validateAdminTeamIfConfigured();
+    toggleAdminUi(true, email);
+    showMessage('success', 'Admin login successful.');
+    loginForm.reset();
   } catch (error) {
-    showAdminMessage('error', error.message || 'Unexpected error occurred.');
+    showMessage('error', error.message || 'Login failed.');
   }
 });
+
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await services.account.deleteSession('current');
+  } finally {
+    toggleAdminUi(false);
+  }
+});
+
+reviewForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  try {
+    const data = new FormData(reviewForm);
+    const trackingId = String(data.get('trackingId') || '').trim();
+    const status = String(data.get('status') || 'pending');
+
+    if (!trackingId) {
+      throw new Error('Please enter tracking ID.');
+    }
+
+    const found = await services.databases.listDocuments(
+      services.cfg.APPWRITE_DATABASE_ID,
+      services.cfg.APPWRITE_COLLECTION_ID,
+      [services.Query.equal('trackingId', trackingId), services.Query.limit(1)]
+    );
+
+    if (!found.total) {
+      throw new Error('Tracking ID not found.');
+    }
+
+    await services.databases.updateDocument(
+      services.cfg.APPWRITE_DATABASE_ID,
+      services.cfg.APPWRITE_COLLECTION_ID,
+      found.documents[0].$id,
+      { status }
+    );
+
+    showMessage('success', 'Verification status updated successfully.');
+  } catch (error) {
+    showMessage('error', error.message || 'Status update failed.');
+  }
+});
+
+boot();

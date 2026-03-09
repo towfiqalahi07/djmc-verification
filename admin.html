@@ -3,26 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Status Update - DJMC 35</title>
+    <title>Admin Approval - DJMC 35</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="container">
       <section class="card">
-        <h1>Admin Verification Update</h1>
-        <p class="subtitle">Use tracking ID and set pending / verified / rejected.</p>
+        <h1>Admin Approval Panel</h1>
+        <p class="subtitle">Sign in with Appwrite admin account, then approve/reject requests.</p>
+        <p id="authState" class="subtitle">Checking session...</p>
 
-        <form id="adminForm" class="form-grid">
+        <form id="adminLoginForm" class="form-grid">
           <label>
-            Admin Secret
-            <input type="password" name="adminSecret" required />
+            Admin Email
+            <input type="email" name="email" required />
           </label>
+          <label>
+            Admin Password
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Sign In</button>
+        </form>
+
+        <form id="adminForm" class="form-grid hidden">
           <label>
             Tracking ID
             <input type="text" name="trackingId" placeholder="DJMC35-XXXXXX" required />
           </label>
           <label>
-            Verification Status
+            Verification Decision
             <select name="status" required>
               <option value="pending">Pending</option>
               <option value="verified">Verified</option>
@@ -32,11 +41,15 @@
           <button type="submit">Update Status</button>
         </form>
 
+        <button id="logoutBtn" class="secondary hidden" type="button">Sign Out</button>
+
         <div id="adminMessage" class="message" aria-live="polite"></div>
       </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@16.0.2"></script>
     <script src="scripts/config.js"></script>
+    <script src="scripts/appwrite-client.js"></script>
     <script src="scripts/admin.js"></script>
   </body>
 </html>
