@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DJMC 35 Verification Portal</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>DJMC 35 Batch Verification</h1>
+        <p class="subtitle">
+          Submit your details for official verification. After submission, you will get a unique tracking ID.
+        </p>
+
+        <form id="verificationForm" class="form-grid">
+          <label>
+            Full Name
+            <input type="text" name="fullName" required />
+          </label>
+
+          <label>
+            Facebook Profile Link (must be in DJMC35 messenger group)
+            <input type="url" name="facebookLink" required placeholder="https://facebook.com/your-profile" />
+          </label>
+
+          <label>
+            MBBS Admission Applicant's Copy Screenshot
+            <input type="file" name="admissionCopy" accept="image/*" required />
+          </label>
+
+          <label>
+            Result Screenshot (roll visible)
+            <input type="file" name="resultScreenshot" accept="image/*" required />
+          </label>
+
+          <fieldset class="camera-box">
+            <legend>Live Picture of Admission Payment Receipt (camera capture)</legend>
+            <p class="camera-note">Use your camera to take a live receipt picture (upload from files is removed for this field).</p>
+            <video id="receiptVideo" class="camera-preview hidden" autoplay playsinline></video>
+            <canvas id="receiptCanvas" class="camera-preview hidden"></canvas>
+            <div class="camera-actions">
+              <button type="button" id="startCameraBtn">Start Camera</button>
+              <button type="button" id="capturePhotoBtn" class="secondary" disabled>Take Picture</button>
+              <button type="button" id="retakePhotoBtn" class="secondary hidden">Retake</button>
+            </div>
+            <p id="cameraStatus" class="camera-status">No picture captured yet.</p>
+          </fieldset>
+
+          <button type="submit" id="submitBtn">Submit Verification Request</button>
+        </form>
+
+        <div id="message" class="message" aria-live="polite"></div>
+
+        <p class="status-link">
+          Already submitted? <a href="status.html">Check your verification status</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/app.js"></script>
+  </body>
+</html>
