@@ -35,10 +35,18 @@
             <input type="file" name="resultScreenshot" accept="image/*" required />
           </label>
 
-          <label>
-            Live Picture of Admission Payment Receipt
-            <input type="file" name="paymentReceipt" accept="image/*" required />
-          </label>
+          <fieldset class="camera-box">
+            <legend>Live Picture of Admission Payment Receipt (camera capture)</legend>
+            <p class="camera-note">Use your camera to take a live receipt picture (upload from files is removed for this field).</p>
+            <video id="receiptVideo" class="camera-preview hidden" autoplay playsinline></video>
+            <canvas id="receiptCanvas" class="camera-preview hidden"></canvas>
+            <div class="camera-actions">
+              <button type="button" id="startCameraBtn">Start Camera</button>
+              <button type="button" id="capturePhotoBtn" class="secondary" disabled>Take Picture</button>
+              <button type="button" id="retakePhotoBtn" class="secondary hidden">Retake</button>
+            </div>
+            <p id="cameraStatus" class="camera-status">No picture captured yet.</p>
+          </fieldset>
 
           <button type="submit" id="submitBtn">Submit Verification Request</button>
         </form>

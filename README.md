@@ -8,7 +8,7 @@ A simple verification portal for DJMC 35 applicants.
   - MBBS admission applicant copy screenshot
   - Result screenshot (roll visible)
   - Facebook profile link
-  - Live admission payment receipt photo
+  - Live admission payment receipt photo (captured using device camera)
 - Saves all submission data in Google Sheets.
 - Generates and stores a unique tracking ID (`DJMC35-XXXXXX`) for every applicant.
 - Status lookup page by tracking ID.
@@ -22,7 +22,7 @@ A simple verification portal for DJMC 35 applicants.
 - `status.html`: tracking status checker
 - `styles.css`: portal styling
 - `scripts/config.js`: configure your Google Apps Script URL
-- `scripts/app.js`: form submission logic
+- `scripts/app.js`: form submission logic + payment receipt camera capture
 - `scripts/status.js`: status check logic
 - `google-apps-script/Code.gs`: backend script for Google Sheets + Drive storage
 

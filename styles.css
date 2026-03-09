@@ -90,6 +90,14 @@ button:hover {
   background: var(--primary-dark);
 }
 
+button.secondary {
+  background: #6a7ba3;
+}
+
+button.secondary:hover {
+  background: #516384;
+}
+
 button:disabled {
   cursor: wait;
   opacity: 0.7;
@@ -116,6 +124,43 @@ button:disabled {
 
 .status-link {
   margin-top: 1.25rem;
+}
+
+.camera-box {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.camera-note {
+  margin-top: 0.4rem;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+}
+
+.camera-preview {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #c9d6ec;
+}
+
+.camera-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.camera-status {
+  margin-bottom: 0;
+  color: #33435c;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none;
 }
 
 .status-result {
