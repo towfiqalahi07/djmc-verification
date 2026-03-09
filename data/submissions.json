@@ -1,0 +1,4 @@
+{
+  "deprecated": true,
+  "note": "Data is stored in Appwrite database now."
+}
