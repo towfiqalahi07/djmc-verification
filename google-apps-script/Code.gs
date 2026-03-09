@@ -1,6 +1,6 @@
 const SHEET_NAME = 'VerificationRequests';
 const STATUS_COLUMN = 'Verified';
-const SPREADSHEET_ID = ''; // Optional: set this if script is standalone (recommended).
+const SPREADSHEET_ID = '1cq1W-ol9EcExW7oKqKWdXJu2ti4qkIe6SjplqKfAgi8'; // Optional: set this if script is standalone (recommended).
 
 function doPost(e) {
   try {
