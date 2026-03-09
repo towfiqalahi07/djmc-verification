@@ -30,17 +30,19 @@ A simple verification portal for DJMC 35 applicants.
 1. Create a Google Spreadsheet.
 2. Open **Extensions → Apps Script**.
 3. Replace default code with `google-apps-script/Code.gs`.
+   - If your Apps Script is **standalone** (not container-bound to that sheet), set `SPREADSHEET_ID` in `Code.gs` to your target sheet ID.
 4. Save and deploy as **Web app**:
    - Execute as: **Me**
    - Who has access: **Anyone** (or your preferred setting)
-5. Copy Web App URL.
-6. Edit `scripts/config.js` and set:
+5. Redeploy the Web App after any `Code.gs` config change (including `SPREADSHEET_ID`).
+6. Copy Web App URL.
+7. Edit `scripts/config.js` and set:
    ```js
    window.APP_CONFIG = {
      GOOGLE_SCRIPT_URL: "YOUR_WEB_APP_URL"
    };
    ```
-7. Host these static files (`index.html`, `status.html`, etc.) anywhere.
+8. Host these static files (`index.html`, `status.html`, etc.) anywhere.
 
 ## Admin Workflow in Sheet
 - Every new request appears with uploaded image links and a generated `TrackingID`.

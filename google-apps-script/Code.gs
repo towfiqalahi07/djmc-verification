@@ -1,5 +1,6 @@
 const SHEET_NAME = 'VerificationRequests';
 const STATUS_COLUMN = 'Verified';
+const SPREADSHEET_ID = '1cq1W-ol9EcExW7oKqKWdXJu2ti4qkIe6SjplqKfAgi8'; // Optional: set this if script is standalone (recommended).
 
 function doPost(e) {
   try {
@@ -7,7 +8,7 @@ function doPost(e) {
     validatePayload_(payload);
 
     const trackingId = generateTrackingId_();
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const spreadsheet = getSpreadsheet_();
     const sheet = spreadsheet.getSheetByName(SHEET_NAME) || createSheet_(spreadsheet);
 
     const admissionCopyUrl = saveFile_(payload.admissionCopy, trackingId, 'admission-copy');
@@ -43,7 +44,7 @@ function doGet(e) {
       throw new Error('Tracking ID is required.');
     }
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const sheet = getSpreadsheet_().getSheetByName(SHEET_NAME);
     if (!sheet) {
       throw new Error('No verification data available yet.');
     }
@@ -130,6 +131,19 @@ function createSheet_(spreadsheet) {
 
   sheet.getRange('H2:H').insertCheckboxes();
   return sheet;
+}
+
+function getSpreadsheet_() {
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (!active) {
+    throw new Error('Spreadsheet not found. Set SPREADSHEET_ID in Code.gs and redeploy the web app.');
+  }
+
+  return active;
 }
 
 function jsonOutput_(obj) {
