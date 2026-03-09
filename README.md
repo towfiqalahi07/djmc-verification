@@ -1,59 +1,55 @@
-# DJMC 35 Verification Portal
+# DJMC 35 Verification Portal (No Google Sheets)
 
-A simple verification portal for DJMC 35 applicants.
+This implementation replaces Google Sheets with a **self-hosted Python backend**.
 
 ## Features
-- Collects:
+- Applicant form collects:
   - Name
   - MBBS admission applicant copy screenshot
   - Result screenshot (roll visible)
   - Facebook profile link
-  - Live admission payment receipt photo (captured using device camera)
-- Saves all submission data in Google Sheets.
-- Generates and stores a unique tracking ID (`DJMC35-XXXXXX`) for every applicant.
-- Status lookup page by tracking ID.
-- Status rules from the sheet `Verified` checkbox/value:
-  - Empty = pending (⚠️ yellow)
-  - Yes/TRUE/checked = verified (✅ green)
-  - No/FALSE/unchecked = rejected (❌ red)
+  - Live payment receipt photo via camera capture
+- Generates unique tracking IDs (`DJMC35-XXXXXX`).
+- Stores uploads in `uploads/` and records in `data/submissions.json`.
+- Status check page by tracking ID:
+  - pending = ⚠️ yellow
+  - verified = ✅ green
+  - rejected = ❌ red
+- Admin page to set status (pending/verified/rejected) using an admin secret.
 
-## Project Structure
-- `index.html`: applicant submission form
-- `status.html`: tracking status checker
-- `styles.css`: portal styling
-- `scripts/config.js`: configure your Google Apps Script URL
-- `scripts/app.js`: form submission logic + payment receipt camera capture
-- `scripts/status.js`: status check logic
-- `google-apps-script/Code.gs`: backend script for Google Sheets + Drive storage
+## Files
+- `server.py` → backend API + static file server
+- `index.html` → applicant submission form
+- `status.html` → applicant status check
+- `admin.html` → admin status update
+- `scripts/config.js` → API base URL config
+- `scripts/app.js` → submit form + camera capture
+- `scripts/status.js` → status page logic
+- `scripts/admin.js` → admin page logic
+- `data/submissions.json` → submission storage
+- `uploads/` → uploaded evidence files
 
-## Google Sheets + Apps Script Setup
-1. Create a Google Spreadsheet.
-2. Open **Extensions → Apps Script**.
-3. Replace default code with `google-apps-script/Code.gs`.
-   - If your Apps Script is **standalone** (not container-bound to that sheet), set `SPREADSHEET_ID` in `Code.gs` to your target sheet ID.
-4. Save and deploy as **Web app**:
-   - Execute as: **Me**
-   - Who has access: **Anyone** (or your preferred setting)
-5. Redeploy the Web App after any `Code.gs` config change (including `SPREADSHEET_ID`).
-6. Copy Web App URL.
-7. Edit `scripts/config.js` and set:
+## Run
+1. Set the API URL in `scripts/config.js` (default is local):
    ```js
    window.APP_CONFIG = {
-     GOOGLE_SCRIPT_URL: "YOUR_WEB_APP_URL"
+     API_BASE_URL: "http://localhost:8000/api"
    };
    ```
-8. Host these static files (`index.html`, `status.html`, etc.) anywhere.
+2. Start backend:
+   ```bash
+   ADMIN_SECRET="your-strong-secret" python3 server.py
+   ```
+3. Open:
+   - Applicant form: `http://localhost:8000/index.html`
+   - Status page: `http://localhost:8000/status.html`
+   - Admin page: `http://localhost:8000/admin.html`
 
-## Admin Workflow in Sheet
-- Every new request appears with uploaded image links and a generated `TrackingID`.
-- Admin can DM the same tracking ID to applicant.
-- Admin sets `Verified` column using checkbox/value:
-  - `TRUE` / Yes => Verified
-  - `FALSE` / No => Rejected
-  - Leave empty => Pending
+## API
+- `POST /api/submit` (multipart form data)
+- `GET /api/status/<trackingId>`
+- `POST /api/admin/update-status` with header `x-admin-secret`
 
-## Local Run
-```bash
-python3 -m http.server 8080
-```
-Then open `http://localhost:8080`.
+## Important
+- Use HTTPS in production for camera access on mobile browsers.
+- Keep `ADMIN_SECRET` private.

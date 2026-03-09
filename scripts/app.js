@@ -9,30 +9,15 @@ const receiptVideo = document.getElementById("receiptVideo");
 const receiptCanvas = document.getElementById("receiptCanvas");
 
 let receiptStream;
-let capturedReceiptImage;
+let capturedReceiptBlob;
 
-const ensureApiUrl = () => {
-  const baseUrl = window.APP_CONFIG?.GOOGLE_SCRIPT_URL?.trim();
+const ensureApiBaseUrl = () => {
+  const baseUrl = window.APP_CONFIG?.API_BASE_URL?.trim();
   if (!baseUrl) {
-    throw new Error("Portal is not configured yet. Please set GOOGLE_SCRIPT_URL in scripts/config.js");
+    throw new Error("Portal is not configured yet. Please set API_BASE_URL in scripts/config.js");
   }
   return baseUrl;
 };
-
-const readImageFile = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const [, base64] = String(reader.result).split(",");
-      resolve({
-        fileName: file.name,
-        mimeType: file.type || "image/jpeg",
-        base64,
-      });
-    };
-    reader.onerror = () => reject(new Error(`Could not read file: ${file.name}`));
-    reader.readAsDataURL(file);
-  });
 
 const stopCamera = () => {
   if (receiptStream) {
@@ -53,17 +38,13 @@ const setCameraStatus = (text) => {
 startCameraBtn.addEventListener("click", async () => {
   try {
     stopCamera();
-    receiptStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    });
-
+    receiptStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
     receiptVideo.srcObject = receiptStream;
     receiptVideo.classList.remove("hidden");
     receiptCanvas.classList.add("hidden");
     capturePhotoBtn.disabled = false;
     retakePhotoBtn.classList.add("hidden");
-    capturedReceiptImage = undefined;
+    capturedReceiptBlob = undefined;
     setCameraStatus("Camera is ready. Tap 'Take Picture'.");
   } catch (error) {
     setCameraStatus("Could not access camera. Please allow camera permission and retry.");
@@ -80,27 +61,29 @@ capturePhotoBtn.addEventListener("click", () => {
   const height = receiptVideo.videoHeight || 720;
   receiptCanvas.width = width;
   receiptCanvas.height = height;
-  const ctx = receiptCanvas.getContext("2d");
-  ctx.drawImage(receiptVideo, 0, 0, width, height);
+  receiptCanvas.getContext("2d").drawImage(receiptVideo, 0, 0, width, height);
 
-  const dataUrl = receiptCanvas.toDataURL("image/jpeg", 0.9);
-  const [, base64] = dataUrl.split(",");
-  capturedReceiptImage = {
-    fileName: `payment-receipt-${Date.now()}.jpg`,
-    mimeType: "image/jpeg",
-    base64,
-  };
-
-  receiptVideo.classList.add("hidden");
-  receiptCanvas.classList.remove("hidden");
-  retakePhotoBtn.classList.remove("hidden");
-  stopCamera();
-  capturePhotoBtn.disabled = true;
-  setCameraStatus("Picture captured successfully.");
+  receiptCanvas.toBlob(
+    (blob) => {
+      if (!blob) {
+        setCameraStatus("Could not capture photo. Please retry.");
+        return;
+      }
+      capturedReceiptBlob = blob;
+      receiptVideo.classList.add("hidden");
+      receiptCanvas.classList.remove("hidden");
+      retakePhotoBtn.classList.remove("hidden");
+      capturePhotoBtn.disabled = true;
+      stopCamera();
+      setCameraStatus("Picture captured successfully.");
+    },
+    "image/jpeg",
+    0.9
+  );
 });
 
 retakePhotoBtn.addEventListener("click", () => {
-  capturedReceiptImage = undefined;
+  capturedReceiptBlob = undefined;
   receiptCanvas.classList.add("hidden");
   receiptVideo.classList.remove("hidden");
   retakePhotoBtn.classList.add("hidden");
@@ -112,54 +95,29 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   message.className = "message";
   message.textContent = "";
-
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
 
   try {
-    const baseUrl = ensureApiUrl();
-    const formData = new FormData(form);
+    const baseUrl = ensureApiBaseUrl();
+    const data = new FormData(form);
 
-    const admissionCopyFile = formData.get("admissionCopy");
-    const resultScreenshotFile = formData.get("resultScreenshot");
-
-    if (!capturedReceiptImage) {
+    if (!capturedReceiptBlob) {
       throw new Error("Please take a live picture of your payment receipt before submitting.");
     }
 
-    const [admissionCopy, resultScreenshot] = await Promise.all([
-      readImageFile(admissionCopyFile),
-      readImageFile(resultScreenshotFile),
-    ]);
+    data.append("paymentReceipt", capturedReceiptBlob, `payment-receipt-${Date.now()}.jpg`);
 
-    const payload = {
-      fullName: formData.get("fullName"),
-      facebookLink: formData.get("facebookLink"),
-      admissionCopy,
-      resultScreenshot,
-      paymentReceipt: capturedReceiptImage,
-    };
+    const response = await fetch(`${baseUrl}/submit`, { method: "POST", body: data });
+    const result = await response.json();
 
-    const response = await fetch(baseUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || "Failed to submit application.");
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Failed to submit application.");
     }
 
-    showMessage(
-      "success",
-      `Submitted successfully. Your tracking ID is ${data.trackingId}. Save this ID; admins can DM you this ID as well.`
-    );
+    showMessage("success", `Submitted successfully. Your tracking ID is ${result.trackingId}. Save this ID for status check.`);
     form.reset();
-    capturedReceiptImage = undefined;
+    capturedReceiptBlob = undefined;
     receiptCanvas.classList.add("hidden");
     receiptVideo.classList.add("hidden");
     retakePhotoBtn.classList.add("hidden");
@@ -173,6 +131,4 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-window.addEventListener("beforeunload", () => {
-  stopCamera();
-});
+window.addEventListener("beforeunload", stopCamera);

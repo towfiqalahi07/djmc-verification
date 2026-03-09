@@ -2,10 +2,10 @@ const statusForm = document.getElementById("statusForm");
 const statusResult = document.getElementById("statusResult");
 const statusBtn = document.getElementById("statusBtn");
 
-const ensureApiUrl = () => {
-  const baseUrl = window.APP_CONFIG?.GOOGLE_SCRIPT_URL?.trim();
+const ensureApiBaseUrl = () => {
+  const baseUrl = window.APP_CONFIG?.API_BASE_URL?.trim();
   if (!baseUrl) {
-    throw new Error("Portal is not configured yet. Please set GOOGLE_SCRIPT_URL in scripts/config.js");
+    throw new Error("Portal is not configured yet. Please set API_BASE_URL in scripts/config.js");
   }
   return baseUrl;
 };
@@ -16,17 +16,13 @@ const renderStatus = (status) => {
   if (status === "verified") {
     statusResult.classList.add("verified");
     statusResult.innerHTML = '<span class="icon">✅</span><span>You are verified.</span>';
-    return;
-  }
-
-  if (status === "rejected") {
+  } else if (status === "rejected") {
     statusResult.classList.add("rejected");
     statusResult.innerHTML = '<span class="icon">❌</span><span>Your application was rejected.</span>';
-    return;
+  } else {
+    statusResult.classList.add("pending");
+    statusResult.innerHTML = '<span class="icon">⚠️</span><span>Your application is pending review.</span>';
   }
-
-  statusResult.classList.add("pending");
-  statusResult.innerHTML = '<span class="icon">⚠️</span><span>Your application is pending review.</span>';
 };
 
 statusForm.addEventListener("submit", async (event) => {
@@ -35,10 +31,9 @@ statusForm.addEventListener("submit", async (event) => {
   statusBtn.textContent = "Checking...";
 
   try {
-    const baseUrl = ensureApiUrl();
+    const baseUrl = ensureApiBaseUrl();
     const trackingId = new FormData(statusForm).get("trackingId").toString().trim();
-
-    const response = await fetch(`${baseUrl}?action=status&trackingId=${encodeURIComponent(trackingId)}`);
+    const response = await fetch(`${baseUrl}/status/${encodeURIComponent(trackingId)}`);
     const data = await response.json();
 
     if (!response.ok || !data.success) {

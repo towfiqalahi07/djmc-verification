@@ -63,14 +63,16 @@ label {
   font-weight: 600;
 }
 
-input {
+input,
+select {
   padding: 0.75rem;
   border: 1px solid #b9c9e2;
   border-radius: 10px;
   font: inherit;
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: 2px solid #9db6ff;
   border-color: #4c77f5;
 }
