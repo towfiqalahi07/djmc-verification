@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Check Verification Status - DJMC 35</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>Check Verification Status</h1>
+        <p class="subtitle">Enter your tracking ID to see if your application is pending, verified, or rejected.</p>
+
+        <form id="statusForm" class="form-grid compact">
+          <label>
+            Tracking ID
+            <input type="text" name="trackingId" placeholder="DJMC35-XXXXXX" required />
+          </label>
+          <button type="submit" id="statusBtn">Check Status</button>
+        </form>
+
+        <div id="statusResult" class="status-result hidden" aria-live="polite"></div>
+
+        <p class="status-link">
+          New applicant? <a href="index.html">Go to verification form</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/status.js"></script>
+  </body>
+</html>
